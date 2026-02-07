@@ -3,18 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jeu du Pendu - Panda Park</title>
+    <title>Jeu du Pendu - Panda Park (v1.1)</title>
     <style>
         :root { --primary: #002654; --accent: #ed2939; --bg: #f3f4f6; --text: #1f2937; }
         body { font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; color: var(--text); }
+        
+        /* バージョン表示用スタイル */
+        .version-badge { font-size: 0.8rem; color: #9ca3af; margin-bottom: 5px; }
+        
         .intro { text-align: center; margin-bottom: 20px; }
         .game-container { background: white; padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; display: flex; flex-direction: column; align-items: center; }
-        canvas { background: #fafafa; border-radius: 12px; border: 1px solid #e5e7eb; width: 100%; max-width: 250px; }
         
-        /* パンダ表示エリア */
-        #panda-container { height: 150px; display: flex; justify-content: center; align-items: center; margin: 10px 0; }
-        #panda-img { max-height: 100%; display: none; border-radius: 10px; }
+        /* パンダ表示エリアを少し大きく確保 */
+        #panda-container { height: 160px; width: 100%; display: flex; justify-content: center; align-items: center; margin: 10px 0; background: #fff; border-radius: 15px; }
+        #panda-img { max-height: 140px; display: none; }
 
+        canvas { background: #fafafa; border-radius: 12px; border: 1px solid #e5e7eb; width: 100%; max-width: 200px; }
         #word-display { font-size: 2.2rem; letter-spacing: 10px; margin: 15px 0; font-weight: bold; }
         #message { height: 30px; margin-bottom: 10px; font-weight: bold; font-size: 1.2rem; }
         .input-group { display: flex; gap: 10px; width: 100%; }
@@ -31,21 +35,22 @@
     <div id="modal">
         <div class="modal-inner">
             <h2>🇫🇷 Jeu du Pendu Panda</h2>
+            <p>Version 1.1</p>
             <input type="text" id="user-name" placeholder="Votre nom" style="width:100%; margin-bottom:20px; padding:10px; box-sizing:border-box;">
             <button onclick="bootGame()">Jouer</button>
         </div>
     </div>
 
+    <div class="version-badge">Version 1.1 (Panda Update)</div>
     <div class="intro">
         <h1>🐼 Panda Park : Le Pendu</h1>
-        <p>Devinez le mot ! <br><strong>6 fautes et c'est fini !</strong></p>
     </div>
 
     <div class="game-container">
-        <canvas id="gameCanvas" width="200" height="200"></canvas>
+        <canvas id="gameCanvas" width="200" height="180"></canvas>
         
         <div id="panda-container">
-            <img id="panda-img" src="" alt="Panda">
+            <img id="panda-img" src="https://45jp.net/panda/wp-content/uploads/2021/08/warau-panda.gif" alt="Panda">
         </div>
 
         <div id="word-display">_ _ _ _</div>
@@ -73,7 +78,6 @@
             targetWord = words[Math.floor(Math.random() * words.length)];
             foundLetters = []; usedLetters = []; mistakes = 0;
             
-            // パンダを隠してリセット
             const pandaImg = document.getElementById('panda-img');
             pandaImg.style.display = "none";
             pandaImg.style.filter = "none";
@@ -88,20 +92,17 @@
             let display = "";
             for (let char of targetWord) display += foundLetters.includes(char) ? char : "_";
             document.getElementById('word-display').innerText = display;
-
             const pandaImg = document.getElementById('panda-img');
 
             if (!display.includes("_")) {
                 document.getElementById('message').innerText = "🎉 Victoire !";
                 document.getElementById('message').style.color = "#10b981";
-                // 成功：笑うパンダGIF
                 pandaImg.src = "https://45jp.net/panda/wp-content/uploads/2021/08/warau-panda.gif";
                 pandaImg.style.display = "block";
                 finish();
             } else if (mistakes >= 6) {
                 document.getElementById('message').innerText = "💀 Perdu : " + targetWord;
                 document.getElementById('message').style.color = "#ef4444";
-                // 失敗：モノクロのパンダ
                 pandaImg.src = "https://45jp.net/panda/wp-content/uploads/2021/08/warau-panda.png";
                 pandaImg.style.display = "block";
                 pandaImg.style.filter = "grayscale(100%)";
@@ -110,14 +111,14 @@
         }
 
         function drawCanvas(step) {
-            ctx.clearRect(0,0,200,200); ctx.strokeStyle="#374151"; ctx.lineWidth=4;
-            ctx.beginPath(); ctx.moveTo(20,180); ctx.lineTo(180,180); ctx.moveTo(50,180); ctx.lineTo(50,20); ctx.lineTo(130,20); ctx.lineTo(130,40); ctx.stroke();
-            if(step>=1){ ctx.beginPath(); ctx.arc(130,55,15,0,Math.PI*2); ctx.stroke(); }
-            if(step>=2){ ctx.beginPath(); ctx.moveTo(130,70); ctx.lineTo(130,120); ctx.stroke(); }
-            if(step>=3){ ctx.beginPath(); ctx.moveTo(130,85); ctx.lineTo(110,105); ctx.stroke(); }
-            if(step>=4){ ctx.beginPath(); ctx.moveTo(130,85); ctx.lineTo(150,105); ctx.stroke(); }
-            if(step>=5){ ctx.beginPath(); ctx.moveTo(130,120); ctx.lineTo(110,150); ctx.stroke(); }
-            if(step>=6){ ctx.beginPath(); ctx.moveTo(130,120); ctx.lineTo(150,150); ctx.stroke(); }
+            ctx.clearRect(0,0,200,180); ctx.strokeStyle="#374151"; ctx.lineWidth=4;
+            ctx.beginPath(); ctx.moveTo(20,170); ctx.lineTo(180,170); ctx.moveTo(50,170); ctx.lineTo(50,10); ctx.lineTo(130,10); ctx.lineTo(130,30); ctx.stroke();
+            if(step>=1){ ctx.beginPath(); ctx.arc(130,45,15,0,Math.PI*2); ctx.stroke(); }
+            if(step>=2){ ctx.beginPath(); ctx.moveTo(130,60); ctx.lineTo(130,110); ctx.stroke(); }
+            if(step>=3){ ctx.beginPath(); ctx.moveTo(130,75); ctx.lineTo(110,95); ctx.stroke(); }
+            if(step>=4){ ctx.beginPath(); ctx.moveTo(130,75); ctx.lineTo(150,95); ctx.stroke(); }
+            if(step>=5){ ctx.beginPath(); ctx.moveTo(130,110); ctx.lineTo(110,140); ctx.stroke(); }
+            if(step>=6){ ctx.beginPath(); ctx.moveTo(130,110); ctx.lineTo(150,140); ctx.stroke(); }
         }
 
         function processGuess() {
