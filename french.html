@@ -3,38 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Panda Park v1.4</title>
+    <title>Panda Park v1.5 - Smart UI</title>
     <style>
-        :root { --primary: #002654; --bg: #f3f4f6; }
+        :root { --primary: #002654; --bg: #f3f4f6; --accent: #ed2939; }
         body { 
             font-family: sans-serif; background: var(--bg); 
-            margin: 0; padding: 10px; 
+            margin: 0; padding: 5px; 
             display: flex; flex-direction: column; align-items: center;
-            height: 100vh; overflow: hidden; /* 画面からはみ出さない */
+            height: 100vh; overflow: hidden; 
         }
-        .version-badge { font-size: 0.7rem; color: #9ca3af; }
+        .version-badge { font-size: 0.7rem; color: #9ca3af; margin-top: 5px; }
         
         .game-container { 
-            background: white; padding: 15px; border-radius: 20px; 
+            background: white; padding: 12px; border-radius: 20px; 
             box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
-            width: 95%; max-width: 350px;
+            width: 92%; max-width: 340px;
             display: flex; flex-direction: column; align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
-        /* パンダエリアを少し小さくして全体を収める */
         #panda-container { 
-            height: 100px; width: 100%; 
+            height: 90px; width: 100%; 
             display: flex; justify-content: center; align-items: center; 
-            background: #fff; border: 2px solid #eee; border-radius: 15px;
+            background: #fff; border: 1px solid #eee; border-radius: 12px;
         }
-        #panda-img { max-height: 90px; display: none; }
-        #panda-text { font-size: 3rem; display: none; } /* 画像が出ない時の予備 */
+        #panda-img { max-height: 85px; display: none; }
+        #panda-text { font-size: 2.5rem; display: none; }
 
-        canvas { background: #fafafa; border-radius: 10px; width: 150px; height: 130px; }
-        #word-display { font-size: 1.8rem; letter-spacing: 5px; font-weight: bold; margin: 5px 0; }
-        #message { font-size: 0.9rem; font-weight: bold; height: 20px; color: var(--primary); }
+        canvas { background: #fafafa; border-radius: 10px; width: 140px; height: 120px; }
+        #word-display { font-size: 1.6rem; letter-spacing: 5px; font-weight: bold; margin: 2px 0; }
+        #message { font-size: 0.9rem; font-weight: bold; height: 18px; color: var(--primary); }
 
+        /* 入力エリアと次へボタンを切り替えるためのコンテナ */
+        .controls { width: 100%; min-height: 50px; display: flex; align-items: center; justify-content: center; }
+        
         .input-group { display: flex; gap: 8px; width: 100%; }
         input[type="text"] { 
             flex-grow: 1; padding: 10px; border: 2px solid #ddd; 
@@ -42,10 +44,12 @@
         }
         button { 
             background: var(--primary); color: white; border: none; 
-            padding: 10px 20px; border-radius: 10px; font-weight: bold;
+            padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 1rem;
         }
         
-        #next-btn { background: #ed2939; width: 100%; }
+        /* 次へボタン専用スタイル：初期状態は非表示 */
+        #next-btn { background: var(--accent); width: 100%; display: none; }
+        
         #modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 100; }
         .modal-inner { background: white; padding: 20px; border-radius: 20px; text-align: center; }
     </style>
@@ -54,35 +58,39 @@
 
     <div id="modal">
         <div class="modal-inner">
-            <h2>🐼 Panda Park v1.4</h2>
+            <h2>🐼 Panda Park v1.5</h2>
             <button onclick="bootGame()">JOUER (START)</button>
         </div>
     </div>
 
-    <div class="version-badge">v1.4 - Fit Screen</div>
+    <div class="version-badge">Version 1.5 (Smart UI)</div>
     
     <div class="game-container">
         <div id="panda-container">
             <img id="panda-img" src="" alt="Panda">
-            <div id="panda-text">🐼</div> <span id="wait-msg" style="color:#ccc">Attente...</span>
+            <div id="panda-text">🐼</div>
+            <span id="wait-msg" style="color:#eee">...</span>
         </div>
 
         <canvas id="gameCanvas" width="200" height="180"></canvas>
-        
         <div id="word-display">_ _ _ _</div>
         <div id="message"></div>
         
-        <div id="input-ui" class="input-group">
-            <input type="text" id="guess-input" maxlength="1" placeholder="A-Z" inputmode="text">
-            <button id="ok-btn" onclick="processGuess()">OK</button>
+        <div class="controls">
+            <div id="input-ui" class="input-group">
+                <input type="text" id="guess-input" maxlength="1" placeholder="A-Z" inputmode="text">
+                <button id="ok-btn" onclick="processGuess()">OK</button>
+            </div>
+            <button id="next-btn" onclick="initRound()">SUIVANT (NEXT) ➔</button>
         </div>
-        <button id="next-btn" class="hidden" onclick="initRound()">SUIVANT</button>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const inputField = document.getElementById('guess-input');
+        const inputUI = document.getElementById('input-ui');
+        const nextBtn = document.getElementById('next-btn');
         const pandaImg = document.getElementById('panda-img');
         const pandaText = document.getElementById('panda-text');
         const waitMsg = document.getElementById('wait-msg');
@@ -99,14 +107,18 @@
             targetWord = words[Math.floor(Math.random() * words.length)];
             foundLetters = []; usedLetters = []; mistakes = 0;
             
+            // UIのリセット
             pandaImg.style.display = "none";
             pandaText.style.display = "none";
             waitMsg.style.display = "block";
             
-            document.getElementById('next-btn').classList.add('hidden');
-            document.getElementById('input-ui').classList.remove('hidden');
+            // ボタンの切り替え：入力を表示、次へを隠す
+            inputUI.style.display = "flex";
+            nextBtn.style.display = "none";
+            
             document.getElementById('message').innerText = "Devinez !";
             render(); drawCanvas(0);
+            setTimeout(() => inputField.focus(), 100);
         }
 
         function render() {
@@ -117,23 +129,26 @@
             if (!display.includes("_")) {
                 document.getElementById('message').innerText = "🏆 GAGNÉ !";
                 showPanda(true);
-                finish();
+                showNextButton();
             } else if (mistakes >= 6) {
                 document.getElementById('message').innerText = "💀 PERDU : " + targetWord;
                 showPanda(false);
-                finish();
+                showNextButton();
             }
+        }
+
+        function showNextButton() {
+            inputUI.style.display = "none";
+            nextBtn.style.display = "block";
         }
 
         function showPanda(isSuccess) {
             waitMsg.style.display = "none";
             if (isSuccess) {
-                // 笑うパンダGIFをセット
                 pandaImg.src = "https://45jp.net/panda/wp-content/uploads/2021/08/warau-panda.gif?t=" + new Date().getTime();
                 pandaImg.style.filter = "none";
                 pandaImg.style.display = "block";
             } else {
-                // 失敗時は絵文字パンダを表示（確実性のため）
                 pandaText.innerText = "💀🐼";
                 pandaText.style.display = "block";
             }
@@ -158,16 +173,9 @@
             usedLetters.push(char);
             if (targetWord.includes(char)) foundLetters.push(char); else { mistakes++; drawCanvas(mistakes); }
             render();
-            // 入力後にキーボードを隠さないための工夫
             setTimeout(() => inputField.focus(), 10);
         }
 
-        function finish() {
-            document.getElementById('input-ui').classList.add('hidden');
-            document.getElementById('next-btn').classList.remove('hidden');
-        }
-
-        // Enterキー対応
         inputField.addEventListener('keydown', (e) => { if (e.key === 'Enter') processGuess(); });
     </script>
 </body>
