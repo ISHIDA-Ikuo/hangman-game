@@ -3,26 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jeu du Pendu - Panda Park (v1.1)</title>
+    <title>Jeu du Pendu - Panda Park (v1.2)</title>
     <style>
         :root { --primary: #002654; --accent: #ed2939; --bg: #f3f4f6; --text: #1f2937; }
         body { font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; color: var(--text); }
-        
-        /* バージョン表示用スタイル */
         .version-badge { font-size: 0.8rem; color: #9ca3af; margin-bottom: 5px; }
+        .intro { text-align: center; margin-bottom: 10px; }
+        .game-container { background: white; padding: 20px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
         
-        .intro { text-align: center; margin-bottom: 20px; }
-        .game-container { background: white; padding: 25px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; display: flex; flex-direction: column; align-items: center; }
-        
-        /* パンダ表示エリアを少し大きく確保 */
-        #panda-container { height: 160px; width: 100%; display: flex; justify-content: center; align-items: center; margin: 10px 0; background: #fff; border-radius: 15px; }
-        #panda-img { max-height: 140px; display: none; }
+        #panda-container { height: 140px; width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
+        #panda-img { max-height: 120px; display: none; }
 
-        canvas { background: #fafafa; border-radius: 12px; border: 1px solid #e5e7eb; width: 100%; max-width: 200px; }
-        #word-display { font-size: 2.2rem; letter-spacing: 10px; margin: 15px 0; font-weight: bold; }
-        #message { height: 30px; margin-bottom: 10px; font-weight: bold; font-size: 1.2rem; }
+        canvas { background: #fafafa; border-radius: 12px; border: 1px solid #e5e7eb; width: 180px; height: 160px; }
+        #word-display { font-size: 2rem; letter-spacing: 8px; margin: 15px 0; font-weight: bold; min-height: 2.5rem; }
+        #message { height: 24px; margin-bottom: 10px; font-weight: bold; font-size: 1rem; color: #6b7280; }
+
         .input-group { display: flex; gap: 10px; width: 100%; }
-        input[type="text"] { flex-grow: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1.2rem; text-align: center; }
+        input[type="text"] { flex-grow: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1.2rem; text-align: center; outline: none; transition: border 0.2s; }
+        input[type="text"]:focus { border-color: var(--primary); }
+        
+        /* 間違えた時の揺れるアニメーション */
+        .shake { animation: shake 0.4s; border-color: var(--accent) !important; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
         button { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer; }
         #next-btn { background: var(--accent); width: 100%; margin-top: 10px; }
         .hidden { display: none; }
@@ -34,38 +41,33 @@
 
     <div id="modal">
         <div class="modal-inner">
-            <h2>🇫🇷 Jeu du Pendu Panda</h2>
-            <p>Version 1.1</p>
-            <input type="text" id="user-name" placeholder="Votre nom" style="width:100%; margin-bottom:20px; padding:10px; box-sizing:border-box;">
+            <h2>🐼 Panda Park v1.2</h2>
+            <p>Entrez votre nom :</p>
+            <input type="text" id="user-name" placeholder="Votre nom" style="width:100%; margin-bottom:20px;">
             <button onclick="bootGame()">Jouer</button>
         </div>
     </div>
 
-    <div class="version-badge">Version 1.1 (Panda Update)</div>
-    <div class="intro">
-        <h1>🐼 Panda Park : Le Pendu</h1>
-    </div>
+    <div class="version-badge">Version 1.2 (Focus & Shake)</div>
+    <div class="intro"><h1>Panda Pendu</h1></div>
 
     <div class="game-container">
         <canvas id="gameCanvas" width="200" height="180"></canvas>
-        
-        <div id="panda-container">
-            <img id="panda-img" src="https://45jp.net/panda/wp-content/uploads/2021/08/warau-panda.gif" alt="Panda">
-        </div>
-
+        <div id="panda-container"><img id="panda-img" src="" alt="Panda"></div>
         <div id="word-display">_ _ _ _</div>
-        <div id="message"></div>
+        <div id="message">Prêt ?</div>
         
         <div id="input-ui" class="input-group">
-            <input type="text" id="guess-input" maxlength="1" placeholder="A-Z">
+            <input type="text" id="guess-input" maxlength="1" placeholder="?" autocomplete="off">
             <button onclick="processGuess()">OK</button>
         </div>
-        <button id="next-btn" class="hidden" onclick="initRound()">Mot suivant</button>
+        <button id="next-btn" class="hidden" onclick="initRound()">Suivant</button>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const inputField = document.getElementById('guess-input');
         const words = ["FRANCE", "PANDA", "BAMBOU", "PARIS", "SOLEIL", "BATEAU", "ECOLE", "JARDIN"];
         let targetWord, foundLetters, usedLetters, mistakes;
 
@@ -77,15 +79,16 @@
         function initRound() {
             targetWord = words[Math.floor(Math.random() * words.length)];
             foundLetters = []; usedLetters = []; mistakes = 0;
-            
             const pandaImg = document.getElementById('panda-img');
             pandaImg.style.display = "none";
             pandaImg.style.filter = "none";
-            
             document.getElementById('next-btn').classList.add('hidden');
             document.getElementById('input-ui').classList.remove('hidden');
-            document.getElementById('message').innerText = "";
+            document.getElementById('message').innerText = "Devinez une lettre";
             render(); drawCanvas(0);
+            
+            // 次のラウンド開始時に自動で入力欄にフォーカス
+            setTimeout(() => inputField.focus(), 100);
         }
 
         function render() {
@@ -95,14 +98,12 @@
             const pandaImg = document.getElementById('panda-img');
 
             if (!display.includes("_")) {
-                document.getElementById('message').innerText = "🎉 Victoire !";
-                document.getElementById('message').style.color = "#10b981";
+                document.getElementById('message').innerText = "🎉 BRAVO !";
                 pandaImg.src = "https://45jp.net/panda/wp-content/uploads/2021/08/warau-panda.gif";
                 pandaImg.style.display = "block";
                 finish();
             } else if (mistakes >= 6) {
-                document.getElementById('message').innerText = "💀 Perdu : " + targetWord;
-                document.getElementById('message').style.color = "#ef4444";
+                document.getElementById('message').innerText = "💀 RATÉ : " + targetWord;
                 pandaImg.src = "https://45jp.net/panda/wp-content/uploads/2021/08/warau-panda.png";
                 pandaImg.style.display = "block";
                 pandaImg.style.filter = "grayscale(100%)";
@@ -122,12 +123,29 @@
         }
 
         function processGuess() {
-            const input = document.getElementById('guess-input');
-            const char = input.value.toUpperCase(); 
-            input.value = "";
-            if (!char.match(/[A-Z]/) || usedLetters.includes(char)) return;
+            const char = inputField.value.toUpperCase(); 
+            inputField.value = "";
+            inputField.focus(); // 入力後にカーソルを戻す
+
+            if (!char.match(/[A-Z]/)) return;
+            
+            if (usedLetters.includes(char)) {
+                document.getElementById('message').innerText = "Déjà utilisé !";
+                return;
+            }
+
             usedLetters.push(char);
-            if (targetWord.includes(char)) foundLetters.push(char); else { mistakes++; drawCanvas(mistakes); }
+            if (targetWord.includes(char)) {
+                foundLetters.push(char);
+                document.getElementById('message').innerText = "Bien !";
+            } else {
+                mistakes++;
+                drawCanvas(mistakes);
+                document.getElementById('message').innerText = "Non...";
+                // 間違えた時に揺らす
+                inputField.classList.add('shake');
+                setTimeout(() => inputField.classList.remove('shake'), 400);
+            }
             render();
         }
 
@@ -135,6 +153,11 @@
             document.getElementById('input-ui').classList.add('hidden');
             document.getElementById('next-btn').classList.remove('hidden');
         }
+
+        // Enterキーでも送信できるようにする
+        inputField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') processGuess();
+        });
     </script>
 </body>
 </html>
