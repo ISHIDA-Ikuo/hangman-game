@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Panda Park v1.8 - Animated Panda</title>
+    <title>Panda Park v1.7 - History</title>
     <style>
         :root { --primary: #002654; --bg: #f3f4f6; --win: #10b981; --lose: #ed2939; }
         body { 
@@ -20,37 +20,21 @@
             display: flex; flex-direction: column; align-items: center;
             gap: 5px;
         }
-
-        /* パンダのアニメーション設定 */
         #panda-container { 
-            height: 90px; width: 100%; 
-            display: flex; justify-content: center; align-items: flex-end; /* 下から出すために下揃え */
+            height: 80px; width: 100%; 
+            display: flex; justify-content: center; align-items: center; 
             background: #fff; border: 1px solid #eee; border-radius: 12px;
-            overflow: hidden; position: relative;
         }
-        #panda-img { 
-            max-height: 80px; display: none; 
-            position: relative;
-            transition: transform 0.5s ease-out;
-        }
-
-        /* 成功時の跳ねるアニメーション */
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-        .bounce { animation: bounce 0.6s infinite; }
-
-        /* 失敗時の震えるアニメーション */
-        @keyframes shake-panda {
-            0%, 100% { transform: translateX(0); }
-            20% { transform: translateX(-3px); }
-            80% { transform: translateX(3px); }
-        }
-        .shake-panda { animation: shake-panda 0.3s infinite; }
+        #panda-img { max-height: 75px; display: none; }
+        #panda-text { font-size: 2.2rem; display: none; }
 
         canvas { background: #fafafa; border-radius: 10px; width: 140px; height: 100px; }
-        .used-letters-container { font-size: 0.8rem; color: #666; width: 100%; text-align: center; min-height: 20px; }
+        
+        /* 使用済み文字の表示エリア */
+        .used-letters-container {
+            font-size: 0.8rem; color: #666; width: 100%; text-align: center;
+            min-height: 20px; margin-top: 2px;
+        }
         .letter-history { font-weight: bold; letter-spacing: 3px; }
         .wrong-letter { color: var(--lose); text-decoration: line-through; }
         .correct-letter { color: #2563eb; }
@@ -60,8 +44,14 @@
 
         .controls { width: 100%; min-height: 50px; display: flex; align-items: center; justify-content: center; }
         .input-group { display: flex; gap: 8px; width: 100%; }
-        input[type="text"] { flex-grow: 1; padding: 10px; border: 2px solid #ddd; border-radius: 10px; font-size: 1.2rem; text-align: center; }
-        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 1rem; }
+        input[type="text"] { 
+            flex-grow: 1; padding: 10px; border: 2px solid #ddd; 
+            border-radius: 10px; font-size: 1.2rem; text-align: center;
+        }
+        button { 
+            background: var(--primary); color: white; border: none; 
+            padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 1rem;
+        }
         #next-btn { width: 100%; display: none; }
         
         #modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 100; }
@@ -72,18 +62,18 @@
 
     <div id="modal">
         <div class="modal-inner">
-            <h2>🐼 Panda Park v1.8</h2>
-            <p>Le Panda va s'animer !</p>
-            <button onclick="bootGame()">COMMENCER</button>
+            <h2>🐼 Panda Park v1.7</h2>
+            <button onclick="bootGame()">JOUER (START)</button>
         </div>
     </div>
 
-    <div class="version-badge">Version 1.8 (Animated Panda)</div>
+    <div class="version-badge">Version 1.7 (Letter History)</div>
     
     <div class="game-container">
         <div id="panda-container">
             <img id="panda-img" src="" alt="Panda">
-            <span id="wait-msg" style="color:#eee">PANDA</span>
+            <div id="panda-text">🐼</div>
+            <span id="wait-msg" style="color:#eee">...</span>
         </div>
 
         <canvas id="gameCanvas" width="200" height="150"></canvas>
@@ -98,7 +88,7 @@
         <div class="controls">
             <div id="input-ui" class="input-group">
                 <input type="text" id="guess-input" maxlength="1" placeholder="A-Z" inputmode="text">
-                <button onclick="processGuess()">OK</button>
+                <button id="ok-btn" onclick="processGuess()">OK</button>
             </div>
             <button id="next-btn" onclick="initRound()">SUIVANT (NEXT) ➔</button>
         </div>
@@ -112,9 +102,15 @@
         const nextBtn = document.getElementById('next-btn');
         const usedHistory = document.getElementById('used-history');
         const pandaImg = document.getElementById('panda-img');
+        const pandaText = document.getElementById('panda-text');
         const waitMsg = document.getElementById('wait-msg');
         
-        const words = ["PANDA", "BAMBOU", "FRANCE", "PARIS", "SOLEIL", "BATEAU", "ECOLE", "JARDIN", "FROMAGE", "TOUR", "MUSIQUE", "VOYAGE", "AMOUR", "CAFE", "BAGUETTE", "MER"];
+        const words = [
+            "PANDA", "BAMBOU", "FRANCE", "PARIS", "SOLEIL", "BATEAU", "ECOLE", "JARDIN",
+            "FROMAGE", "TOUR", "MUSIQUE", "VOYAGE", "AMOUR", "CAFE", "BAGUETTE", "MER",
+            "FLEUR", "AVION", "LIVRE", "CHIEN", "CHAT", "MAISON", "ROUTE", "POMME",
+            "CIEL", "FORET", "NEIGE", "PLAGE", "RIVIERE", "MONTAGNE", "ETOILE", "LUNE"
+        ];
         let targetWord, foundLetters, usedLetters, mistakes;
 
         function bootGame() {
@@ -127,13 +123,13 @@
             foundLetters = []; usedLetters = []; mistakes = 0;
             
             pandaImg.style.display = "none";
-            pandaImg.classList.remove('bounce', 'shake-panda');
-            pandaImg.style.transform = "translateY(50px)"; // 最初は下に隠す
+            pandaText.style.display = "none";
             waitMsg.style.display = "block";
             
             inputUI.style.display = "flex";
             nextBtn.style.display = "none";
             usedHistory.innerHTML = "";
+            
             document.getElementById('message').innerText = "Devinez !";
             render(); drawCanvas(0);
             setTimeout(() => inputField.focus(), 100);
@@ -143,6 +139,8 @@
             let display = "";
             for (let char of targetWord) display += foundLetters.includes(char) ? char : "_";
             document.getElementById('word-display').innerText = display;
+
+            // 履歴表示の更新
             updateHistory();
 
             if (!display.includes("_")) {
@@ -161,7 +159,11 @@
             usedLetters.forEach(char => {
                 const span = document.createElement('span');
                 span.innerText = char + " ";
-                span.className = targetWord.includes(char) ? "correct-letter" : "wrong-letter";
+                if (targetWord.includes(char)) {
+                    span.className = "correct-letter";
+                } else {
+                    span.className = "wrong-letter";
+                }
                 usedHistory.appendChild(span);
             });
         }
@@ -174,20 +176,13 @@
 
         function showPanda(isSuccess) {
             waitMsg.style.display = "none";
-            pandaImg.style.display = "block";
-            
-            // 下からひょっこり現れる動き
-            setTimeout(() => {
-                pandaImg.style.transform = "translateY(0)";
-                if (isSuccess) {
-                    pandaImg.src = "https://45jp.net/panda/wp-content/uploads/2021/08/warau-panda.gif?t=" + new Date().getTime();
-                    pandaImg.classList.add('bounce'); // 跳ねる
-                } else {
-                    pandaImg.src = "https://45jp.net/panda/wp-content/uploads/2021/08/warau-panda.png";
-                    pandaImg.style.filter = "grayscale(100%)";
-                    pandaImg.classList.add('shake-panda'); // 震える
-                }
-            }, 50);
+            if (isSuccess) {
+                pandaImg.src = "https://45jp.net/panda/wp-content/uploads/2021/08/warau-panda.gif?t=" + new Date().getTime();
+                pandaImg.style.display = "block";
+            } else {
+                pandaText.innerText = "💀🐼";
+                pandaText.style.display = "block";
+            }
         }
 
         function drawCanvas(step) {
@@ -205,8 +200,14 @@
             const char = inputField.value.trim().toUpperCase(); 
             inputField.value = "";
             if (!char.match(/[A-Z]/) || char === "" || usedLetters.includes(char)) return;
+
             usedLetters.push(char);
-            if (targetWord.includes(char)) foundLetters.push(char); else { mistakes++; drawCanvas(mistakes); }
+            if (targetWord.includes(char)) {
+                foundLetters.push(char);
+            } else {
+                mistakes++;
+                drawCanvas(mistakes);
+            }
             render();
             setTimeout(() => inputField.focus(), 10);
         }
