@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Panda Park v1.6 - Many Words</title>
+    <title>Panda Park v1.7 - History</title>
     <style>
         :root { --primary: #002654; --bg: #f3f4f6; --win: #10b981; --lose: #ed2939; }
         body { 
@@ -14,21 +14,31 @@
         }
         .version-badge { font-size: 0.7rem; color: #9ca3af; margin-top: 5px; }
         .game-container { 
-            background: white; padding: 12px; border-radius: 20px; 
+            background: white; padding: 10px; border-radius: 20px; 
             box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
             width: 92%; max-width: 340px;
             display: flex; flex-direction: column; align-items: center;
-            gap: 8px;
+            gap: 5px;
         }
         #panda-container { 
-            height: 90px; width: 100%; 
+            height: 80px; width: 100%; 
             display: flex; justify-content: center; align-items: center; 
             background: #fff; border: 1px solid #eee; border-radius: 12px;
         }
-        #panda-img { max-height: 85px; display: none; }
-        #panda-text { font-size: 2.5rem; display: none; }
+        #panda-img { max-height: 75px; display: none; }
+        #panda-text { font-size: 2.2rem; display: none; }
 
-        canvas { background: #fafafa; border-radius: 10px; width: 140px; height: 110px; }
+        canvas { background: #fafafa; border-radius: 10px; width: 140px; height: 100px; }
+        
+        /* 使用済み文字の表示エリア */
+        .used-letters-container {
+            font-size: 0.8rem; color: #666; width: 100%; text-align: center;
+            min-height: 20px; margin-top: 2px;
+        }
+        .letter-history { font-weight: bold; letter-spacing: 3px; }
+        .wrong-letter { color: var(--lose); text-decoration: line-through; }
+        .correct-letter { color: #2563eb; }
+
         #word-display { font-size: 1.6rem; letter-spacing: 5px; font-weight: bold; margin: 2px 0; }
         #message { font-size: 0.9rem; font-weight: bold; height: 18px; color: var(--primary); }
 
@@ -42,8 +52,6 @@
             background: var(--primary); color: white; border: none; 
             padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 1rem;
         }
-        
-        /* 次へボタン（色はJavaScriptで制御） */
         #next-btn { width: 100%; display: none; }
         
         #modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 100; }
@@ -54,12 +62,12 @@
 
     <div id="modal">
         <div class="modal-inner">
-            <h2>🐼 Panda Park v1.6</h2>
+            <h2>🐼 Panda Park v1.7</h2>
             <button onclick="bootGame()">JOUER (START)</button>
         </div>
     </div>
 
-    <div class="version-badge">Version 1.6 (More Words & Dynamic Colors)</div>
+    <div class="version-badge">Version 1.7 (Letter History)</div>
     
     <div class="game-container">
         <div id="panda-container">
@@ -68,7 +76,12 @@
             <span id="wait-msg" style="color:#eee">...</span>
         </div>
 
-        <canvas id="gameCanvas" width="200" height="180"></canvas>
+        <canvas id="gameCanvas" width="200" height="150"></canvas>
+        
+        <div class="used-letters-container">
+            Lettres: <span id="used-history" class="letter-history"></span>
+        </div>
+
         <div id="word-display">_ _ _ _</div>
         <div id="message"></div>
         
@@ -87,11 +100,11 @@
         const inputField = document.getElementById('guess-input');
         const inputUI = document.getElementById('input-ui');
         const nextBtn = document.getElementById('next-btn');
+        const usedHistory = document.getElementById('used-history');
         const pandaImg = document.getElementById('panda-img');
         const pandaText = document.getElementById('panda-text');
         const waitMsg = document.getElementById('wait-msg');
         
-        // 豊富な単語リスト
         const words = [
             "PANDA", "BAMBOU", "FRANCE", "PARIS", "SOLEIL", "BATEAU", "ECOLE", "JARDIN",
             "FROMAGE", "TOUR", "MUSIQUE", "VOYAGE", "AMOUR", "CAFE", "BAGUETTE", "MER",
@@ -115,6 +128,7 @@
             
             inputUI.style.display = "flex";
             nextBtn.style.display = "none";
+            usedHistory.innerHTML = "";
             
             document.getElementById('message').innerText = "Devinez !";
             render(); drawCanvas(0);
@@ -126,15 +140,32 @@
             for (let char of targetWord) display += foundLetters.includes(char) ? char : "_";
             document.getElementById('word-display').innerText = display;
 
+            // 履歴表示の更新
+            updateHistory();
+
             if (!display.includes("_")) {
                 document.getElementById('message').innerText = "🏆 GAGNÉ !";
                 showPanda(true);
-                showNextButton(true); // 緑ボタン
+                showNextButton(true);
             } else if (mistakes >= 6) {
                 document.getElementById('message').innerText = "💀 PERDU : " + targetWord;
                 showPanda(false);
-                showNextButton(false); // 赤ボタン
+                showNextButton(false);
             }
+        }
+
+        function updateHistory() {
+            usedHistory.innerHTML = "";
+            usedLetters.forEach(char => {
+                const span = document.createElement('span');
+                span.innerText = char + " ";
+                if (targetWord.includes(char)) {
+                    span.className = "correct-letter";
+                } else {
+                    span.className = "wrong-letter";
+                }
+                usedHistory.appendChild(span);
+            });
         }
 
         function showNextButton(isWin) {
@@ -147,7 +178,6 @@
             waitMsg.style.display = "none";
             if (isSuccess) {
                 pandaImg.src = "https://45jp.net/panda/wp-content/uploads/2021/08/warau-panda.gif?t=" + new Date().getTime();
-                pandaImg.style.filter = "none";
                 pandaImg.style.display = "block";
             } else {
                 pandaText.innerText = "💀🐼";
@@ -156,14 +186,14 @@
         }
 
         function drawCanvas(step) {
-            ctx.clearRect(0,0,200,180); ctx.strokeStyle="#333"; ctx.lineWidth=4;
-            ctx.beginPath(); ctx.moveTo(20,170); ctx.lineTo(180,170); ctx.moveTo(50,170); ctx.lineTo(50,10); ctx.lineTo(130,10); ctx.lineTo(130,30); ctx.stroke();
+            ctx.clearRect(0,0,200,150); ctx.strokeStyle="#333"; ctx.lineWidth=4;
+            ctx.beginPath(); ctx.moveTo(20,140); ctx.lineTo(180,140); ctx.moveTo(50,140); ctx.lineTo(50,10); ctx.lineTo(130,10); ctx.lineTo(130,30); ctx.stroke();
             if(step>=1){ ctx.beginPath(); ctx.arc(130,45,15,0,Math.PI*2); ctx.stroke(); }
-            if(step>=2){ ctx.beginPath(); ctx.moveTo(130,60); ctx.lineTo(130,110); ctx.stroke(); }
-            if(step>=3){ ctx.beginPath(); ctx.moveTo(130,75); ctx.lineTo(110,95); ctx.stroke(); }
-            if(step>=4){ ctx.beginPath(); ctx.moveTo(130,75); ctx.lineTo(150,95); ctx.stroke(); }
-            if(step>=5){ ctx.beginPath(); ctx.moveTo(130,110); ctx.lineTo(110,140); ctx.stroke(); }
-            if(step>=6){ ctx.beginPath(); ctx.moveTo(130,110); ctx.lineTo(150,140); ctx.stroke(); }
+            if(step>=2){ ctx.beginPath(); ctx.moveTo(130,60); ctx.lineTo(130,100); ctx.stroke(); }
+            if(step>=3){ ctx.beginPath(); ctx.moveTo(130,70); ctx.lineTo(110,90); ctx.stroke(); }
+            if(step>=4){ ctx.beginPath(); ctx.moveTo(130,70); ctx.lineTo(150,90); ctx.stroke(); }
+            if(step>=5){ ctx.beginPath(); ctx.moveTo(130,100); ctx.lineTo(110,130); ctx.stroke(); }
+            if(step>=6){ ctx.beginPath(); ctx.moveTo(130,100); ctx.lineTo(150,130); ctx.stroke(); }
         }
 
         function processGuess() {
@@ -172,7 +202,12 @@
             if (!char.match(/[A-Z]/) || char === "" || usedLetters.includes(char)) return;
 
             usedLetters.push(char);
-            if (targetWord.includes(char)) foundLetters.push(char); else { mistakes++; drawCanvas(mistakes); }
+            if (targetWord.includes(char)) {
+                foundLetters.push(char);
+            } else {
+                mistakes++;
+                drawCanvas(mistakes);
+            }
             render();
             setTimeout(() => inputField.focus(), 10);
         }
